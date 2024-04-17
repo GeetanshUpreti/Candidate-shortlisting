@@ -32,3 +32,4 @@ This function opens a file dialog to select a directory containing PDF resumes. 
 ## Note
 
 The program assumes that each PDF contains only one page. If a PDF has multiple pages, the program may not work as expected. Additionally, the program uses the T5 base model for summarization, which may not always produce perfect summaries.
+You ave to install tensorflow and keras to work with trandformers library.
