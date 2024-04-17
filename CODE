@@ -1,0 +1,96 @@
+# library for GUI to select the folder
+import tkinter as tk     
+# Transformer model from hugging face to summarize the text
+from transformers import pipeline   
+# library to convert data into csv
+import csv              
+# library to read the pdfs
+import PyPDF2 as pd
+# library to scan th directories
+import os
+# library for regular expression
+import re
+# import fileddialog to select the folder
+from tkinter import filedialog
+
+def file_dialog():
+    # geting the folder path
+    path = filedialog.askdirectory()
+    # empty list to store pdf files in the folder
+    list = []
+    # obtaning a list dir of available filees in the selected folder
+    dir = os.listdir(path)
+    
+    # traversing dir to check if the directory contains pdfs
+    for i in dir:
+        # if pdfs are present in the dir append their address to empty list
+        if ".pdf" in i:
+            list.append(i)
+            print(i)
+    # if list is empty then skep the process
+    if len(list) == 0:
+        print("list is empty")
+    # if their is at least 1 pdf below code will execute
+    else:
+        # initializing the transformer pipe line
+        summarize = pipeline('summarization',model='t5-base')    # text summarization model google t5 small
+        # regular expression to extract email
+        email = r"[\w\.]+@[\w\-]+\.[\w\.]+"
+        # regular expression to extract phone number
+        phone = r"[\(]?[\w]+[\)]?[\s]?[\d]+[\-]?[\d]+"
+        # empty list to store details of different pdfs
+        rows = []
+        # list of fileds for csv file
+        fields = ["Name","Email","Phone", "Summary"]
+        # traversing the list which contains pdf file addresses
+        for i in list:
+            # opening pdfs in read binary mode as fl alias
+            with open(f"{path}\\{i}","rb") as fl:   
+                # empty list to store details of resume which is open
+                ls = [] 
+                # creating object of Pdfreader with pdf selected
+                pdf = pd.PdfReader(fl)
+                # normally pdfs of resume contains only one page
+                page = pdf.pages[0]
+                # extracting text from pdfs and excluding the white spaces in highest and lowest part of pages
+                text = page.extract_text().strip()
+                try:
+                    # name of person who created the resume
+                    ls.append(pdf.metadata.author)
+                except:
+                    ls.append("not found")
+                try:
+                    # popping fisrt email address found because re.findall returns a list of expression found
+                    ls.append(re.findall(email, text).pop(0))
+                except:
+                    ls.append("not found")
+                try:
+                    # same as above
+                    ls.append(re.findall(phone, text).pop(0))
+                except:
+                    ls.append("not found")
+                # running the model to summarize the resume text 
+                suma = summarize(text,max_length=200,min_length=100,do_sample=False)
+                # suma.replace("")
+                ls.append(suma)
+                        # Print the metadata
+                print("Author:", pdf.metadata.author)
+            rows.append(ls)
+
+        
+        
+        
+        
+        
+        # last
+        # creating the csv file 
+        file = "resume.csv"
+        with open(file,"w") as csvfile:
+            csvwriter = csv.writer(csvfile)
+            # writing the filed names in csv
+            csvwriter.writerow(fields)
+            # writing csv with information of all pdfs
+            csvwriter.writerows(rows)
+        
+        
+file_dialog()
